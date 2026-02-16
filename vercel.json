@@ -1,0 +1,37 @@
+-3. vercel.json
+
+This tells Vercel to treat api/* as serverless functions.
+
+`json
+{
+  "version": 2,
+  "builds": [
+    { "src": "next.config.mjs", "use": "@vercel/next" },        fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, sans-serif",
+    <main
+      style={{
+        minHeight: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, sans-serif",
+        background: "#050816",
+        color: "#e5e7eb"
+      }}
+    >
+      <h1 style={{ fontSize: "2.5rem", marginBottom: "0.5rem" }}>
+        GitDigital GitHub Apps Hub
+      </h1>
+      <p style={{ opacity: 0.8, maxWidth: 600, textAlign: "center" }}>
+        Webhooks, OAuth callbacks, and install flows for GitDigital GitHub Apps,
+        served from rickcreator87.2bd.net.
+      </p>
+      <div style={{ marginTop: "2rem", fontSize: "0.9rem", opacity: 0.7 }}>
+        /api/webhooks/github · /api/oauth/callback · /api/install
+      </div>
+    </main>
+  )
+}
+
+export default Home
+`
