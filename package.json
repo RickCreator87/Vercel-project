@@ -1,12 +1,9 @@
-1. package.json
-
-`json
 {
   "name": "rickcreator-vercel-app",
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "vercel dev",
+    "dev": "next dev",
     "build": "next build",
     "start": "next start"
   },
@@ -24,4 +21,3 @@
     "@types/react-dom": "^18.2.0"
   }
 }
-`
