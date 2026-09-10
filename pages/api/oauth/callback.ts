@@ -1,13 +1,7 @@
-7. api/oauth/callback.ts
+import type { NextApiRequest, NextApiResponse } from "next"
 
-Handles OAuth callback and exchanges code for an access token.
-
-`ts
-import type { VercelRequest, VercelResponse } from "@vercel/node"
-import fetch from "node-fetch"
-
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  const { code, state } = req.query
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  const { code } = req.query
 
   if (!code) {
     res.status(400).send("Missing code")
@@ -16,32 +10,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     const params = new URLSearchParams()
-    params.set("clientid", process.env.GITHUBOAUTHCLIENTID || "")
-    params.set("clientsecret", process.env.GITHUBOAUTHCLIENTSECRET || "")
+    params.set("client_id", process.env.GITHUB_OAUTH_CLIENT_ID || "")
+    params.set("client_secret", process.env.GITHUB_OAUTH_CLIENT_SECRET || "")
     params.set("code", String(code))
 
-    const tokenRes = await fetch("https://github.com/login/oauth/access_token", {
+    const tokenResponse = await fetch("https://github.com/login/oauth/access_token", {
       method: "POST",
       headers: { Accept: "application/json" },
       body: params
     })
 
-    const json = (await tokenRes.json()) as any
+    const body = await tokenResponse.json()
 
-    if (json.error) {
-      console.error("OAuth error:", json)
-      res.status(400).json(json)
+    if (body.error) {
+      console.error("OAuth error:", body.error)
+      res.status(400).json(body)
       return
     }
 
-    // TODO: store json.access_token somewhere (DB, KV, etc.)
-    console.log("OAuth token response:", json)
-
+    // The access token is deliberately not logged: it grants the same access as the user who just authorized.
     res.status(200).send("GitHub OAuth successful. You can close this window.")
   } catch (err) {
     console.error("OAuth callback error:", err)
     res.status(500).send("Internal Server Error")
   }
 }
-`
-
