@@ -1,31 +1,40 @@
-6. api/webhooks/github.ts
-
-Minimal GitHub App webhook receiver with signature verification.
-
-`ts
-import type { VercelRequest, VercelResponse } from "@vercel/node"
+import type { NextApiRequest, NextApiResponse } from "next"
 import { Webhooks } from "@octokit/webhooks"
 
+// The signature covers the exact bytes GitHub sent, so the body has to reach verification unparsed; letting Next parse and re-serialize it rejects every legitimate delivery.
+export const config = { api: { bodyParser: false } }
+
 const webhooks = new Webhooks({
-  secret: process.env.GITHUBWEBHOOKSECRET || ""
+  secret: process.env.GITHUB_WEBHOOK_SECRET || ""
 })
 
-webhooks.onAny(async ({ id, name, payload }) => {
-  console.log(GitHub event: ${name} (${id}))
-  // TODO: route by repo, installation, or app logic
+webhooks.onAny(async ({ id, name }) => {
+  console.log(`GitHub event: ${name} (${id})`)
 })
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+async function readRawBody(req: NextApiRequest) {
+  const chunks: Buffer[] = []
+  for await (const chunk of req) {
+    chunks.push(typeof chunk === "string" ? Buffer.from(chunk) : chunk)
+  }
+  return Buffer.concat(chunks).toString("utf8")
+}
+
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "POST") {
     res.status(405).send("Method Not Allowed")
     return
   }
 
-  const signature = req.headers["x-hub-signature-256"] as string | undefined
-  const id = req.headers["x-github-delivery"] as string | undefined
-  const event = req.headers["x-github-event"] as string | undefined
+  const signature = req.headers["x-hub-signature-256"]
+  const id = req.headers["x-github-delivery"]
+  const event = req.headers["x-github-event"]
 
-  if (!signature || !id || !event) {
+  if (
+    typeof signature !== "string" ||
+    typeof id !== "string" ||
+    typeof event !== "string"
+  ) {
     res.status(400).send("Missing GitHub headers")
     return
   }
@@ -33,8 +42,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     await webhooks.verifyAndReceive({
       id,
-      name: event as any,
-      payload: req.body,
+      name: event as Parameters<typeof webhooks.verifyAndReceive>[0]["name"],
+      payload: await readRawBody(req),
       signature
     })
     res.status(200).send("OK")
@@ -43,7 +52,3 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.status(401).send("Invalid signature")
   }
 }
-`
-
-> In Vercel, make sure “Body parsing” is disabled for this route or send raw body; if needed we can adjust this to use buffer + manual verification.
-
